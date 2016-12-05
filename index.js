@@ -19,14 +19,27 @@ function clean(x) {
 // get the content of a text node, if any
 function nodeVal(x) { if (x) {norm(x);} return x && x.firstChild && x.firstChild.nodeValue; }
 function coordPair(x) {
-    // Extended array to return more associated data.. not the cleanest solution but the only one which will not affect
-    // existing use cases (implementations currently uses first and second elements which are the same - long, lat)
+    // // Extended array to return more associated data.. not the cleanest solution but the only one which will not affect
+    // // existing use cases (implementations currently uses first and second elements which are the same - long, lat)
+    // return [
+    //     parseFloat(nodeVal(get1(x, 'LongitudeDegrees'))) || 0,
+    //     parseFloat(nodeVal(get1(x, 'LatitudeDegrees'))) || 0,
+    //     parseFloat(nodeVal(get1(x, 'AltitudeMeters'))) || 0, // Altitude
+    //     parseFloat(nodeVal(get1(x, 'Value'))) || 0, // HeartRateBpm
+    //     nodeVal(get1(x, 'Time'))
+    // ];
+
+    return numarray([
+        nodeVal(get1(x, 'LongitudeDegrees')),
+        nodeVal(get1(x, 'LatitudeDegrees'))
+    ]);
+}
+
+function latBPMTimeArray(x) {
     return [
-        parseFloat(nodeVal(get1(x, 'LongitudeDegrees'))) || 0,
-        parseFloat(nodeVal(get1(x, 'LatitudeDegrees'))) || 0,
         parseFloat(nodeVal(get1(x, 'AltitudeMeters'))) || 0, // Altitude
         parseFloat(nodeVal(get1(x, 'Value'))) || 0, // HeartRateBpm
-        nodeVal(get1(x, 'Time'))
+        nodeVal(get1(x, 'Time')) || ''
     ];
 }
 
@@ -71,16 +84,18 @@ module.exports = function(doc) {
     }
 
     function getLinestring(node) {
-        var j, pts = get(node, 'Trackpoint'), line = [];
+        var j, pts = get(node, 'Trackpoint'), line = [], meta = [];
         for (j = 0; j < pts.length; j++) {
             line.push(coordPair(pts[j]));
+            meta.push(latBPMTimeArray(pts[j]));
         }
         return {
             type: 'Feature',
             properties: getProperties(node),
             geometry: {
                 type: 'LineString',
-                coordinates: line
+                coordinates: line,
+                meta: meta
             }
         };
     }
